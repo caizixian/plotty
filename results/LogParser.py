@@ -42,6 +42,7 @@ class Result(object):
 
 def extract_scenario(scenario, entry):
     """ Extract scenario variables from a log filename """
+    entry = entry.replace(',',':');
     m = re_filename.match(entry)
     scenario["benchmark"] = m.group(1)
     scenario["hfac"] = m.group(2)
