@@ -13,9 +13,7 @@ fi
 PROJECT_NAME=$1
 LOG_DIR=$2
 DIR=`dirname $0`
-if [ -z "$BRANCH" ]; then
-    BRANCH=`hg branch -R $DIR`
-fi
+BRANCH="master"
 
 USER=""
 if [  -z "$3" ]; then
@@ -63,9 +61,9 @@ mkdir $PLOTTY_ROOT/cache/graph
 mkdir $PLOTTY_ROOT/cache/csv
 
 echo "---> Checking out source code to $PLOTTY_ROOT"
-hg clone -r $BRANCH ssh://squirrel.moma//home/mercurial/all/shared/plotty $PLOTTY_ROOT/app/plotty > /dev/null
+git clone -b $BRANCH git@gitlab.anu.edu.au:plsl/tools/plotty.git $PLOTTY_ROOT/app/plotty > /dev/null
 if [[ $? -ne 0 ]]; then
-    echo "ERROR: failed to check code out from mercurial"
+    echo "ERROR: failed to check code out from GitLab"
     exit
 fi
 
