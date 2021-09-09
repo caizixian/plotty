@@ -660,6 +660,14 @@ class LBOBlock(Block):
         self.group = []
         self.column1 = None
         self.column2 = None
+        self.prefix = None
+
+    def get_prefix(self, s):
+        spl = s.split(".")
+        if len(spl) < 2:
+            return s
+        else:
+            return ".".join(spl[:-1])
 
     def decode(self, param_string, cache_key):
         parts = param_string.split(PipelineEncoder.GROUP_SEPARATOR)
@@ -669,6 +677,11 @@ class LBOBlock(Block):
         
         self.column1 = parts[0]
         self.column2 = parts[1]
+
+        if self.get_prefix(self.column1) != self.get_prefix(self.column2):
+            raise PipelineError("The prefix of two value columns should be the same")
+
+        self.prefix = self.get_prefix(self.column1)
 
         # Part 3 is the groupings
         groupings = parts[2].split(PipelineEncoder.PARAM_SEPARATOR)
@@ -680,7 +693,56 @@ class LBOBlock(Block):
     def apply(self, data_table, messages):
         """ Apply this block to the given data table.
         """
-        return
+        ignored_rows = []
+        for col in self.group:
+            if not col in data_table.scenarioColumns:
+                raise PipelineError("Invalid columns specified for block")
+        
+        groups = {}
+
+        # Group the rows up as needed
+        for row in data_table:
+            # Check if all the group columns are defined
+            skip = False
+            for key in self.group:
+                if key not in row.scenario:
+                    skip = True
+                    break
+            if skip:
+                ignored_rows.append(row)
+                continue
+            
+            # Hash the scenario and insert it into its group
+            sc_hash = scenario_hash(scenario=row.scenario, include=self.group)
+            if sc_hash not in groups:
+                groups[sc_hash] = []
+            groups[sc_hash].append(row)
+        
+        # Perform the normalisation
+        new_rows = []
+        for (scenario, rows) in groups.iteritems():
+            best = min([self.get_value(x.values[self.column1]) for x in rows])
+            for row in rows:
+                row.values["{}.total".format(self.prefix)] = self.get_value(row.values[self.column1]) + self.get_value(row.values[self.column2])
+                row.values["{}.lbo".format(self.prefix)] = row.values["{}.total".format(self.prefix)] / best
+            new_rows.extend(rows)
+
+        # Wrap it all up
+        data_table.rows = new_rows
+        data_table.valueColumns.update(["{}.total".format(self.prefix), "{}.lbo".format(self.prefix)])
+        data_table.valueColumnsDisplay.update({
+            "{}.total".format(self.prefix): "{}.total".format(self.prefix),
+            "{}.lbo".format(self.prefix): "{}.lbo".format(self.prefix)
+        })
+        #print(data_table.valueColumns)
+        if len(ignored_rows) > 0:
+            logging.info("Normaliser block ignored %d rows because they were missing a scenario column from the selected grouping", len(ignored_rows))
+
+    def get_value(self, val):
+        if isinstance(val, DataAggregate):
+            return val.value()
+        else:
+            return val
 
 
 class GraphBlock(Block):

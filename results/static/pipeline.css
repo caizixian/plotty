@@ -191,7 +191,7 @@ input:disabled {
     width: 32%;
     background-image: url('chart_line.png');
 }
-#add-lbo, #insert-format {
+#add-lbo, #insert-lbo {
     width: 32%;
     background-image: url('muscle.png');
     background-size: 16px 16px;
