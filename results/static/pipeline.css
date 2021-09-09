@@ -548,3 +548,8 @@ th.headerSortDown {
     margin: 0;
     white-space: pre-wrap;
 }
+
+.select-log{
+    max-width: 330px;
+    text-overflow: ellipsis;
+}
