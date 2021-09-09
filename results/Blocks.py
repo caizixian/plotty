@@ -653,6 +653,222 @@ class NormaliseBlock(Block):
 
         return normalisers
 
+class LBOBlock(Block):
+    """ Normalises the rows in the DataTable to a specified value. The
+        normalisation can be performed in two ways - either by specifying a
+        normaliser to be used, or by finding the best value in a group and
+        normalising to that. Before normalising, values are grouped based on
+        the equivalence of their scenarios. The columns compared in doing this
+        grouping can be specified.
+        
+        datatable: the DataTable to be normalised, passed by reference.
+        Keyword arguments:
+        * normaliser -- the type of normalisation to perform.
+          [other arguments determined by this value - see methods below]
+    """
+
+    TYPE = {
+        'SELECT': '1',
+        'BEST': '2'
+    }
+
+    FLAGS = {
+        'NORMALISE_TO_SPECIFIC_VALUE': 1 << 0,
+        'INVERT_RESULT': 1 << 1 
+    }
+
+    def __init__(self):
+        super(LBOBlock, self).__init__()
+
+        self.group = []
+        self.type = None
+        self.normaliser = []
+        self.normaliserValue = None
+
+    def decode(self, param_string, cache_key):
+        """ Decode a normalise block from an encoded pipeline string.
+            Normalise blocks are encoded in the form:
+            0&scenario^value&scenario^value&groupscenario&groupscenario
+            We distinguish between selected normalisers and group scenarios
+            by the presence of the ^ character.
+        """
+        parts = param_string.split(PipelineEncoder.GROUP_SEPARATOR)
+        # At least three parts - flagword, type, groups (possibly empty)
+        if len(parts) < 3:
+            raise PipelineError("Normalise block invalid: incorrect number of parts")
+        
+        self.flags = int(parts[0])
+        self.type = parts[1]
+
+        # Part 3 is the groupings
+        groupings = parts[2].split(PipelineEncoder.PARAM_SEPARATOR)
+        for grp in groupings:
+            s = grp.strip()
+            if len(s) > 0:
+                self.group.append(s)
+        
+        # If this is a select normaliser, part 4 is the pairs
+        if self.type == LBOBlock.TYPE['SELECT']:
+            if len(parts) < 4 or len(parts[3].strip()) == 0:
+                raise PipelineError("Normalise block invalid: no pairings for select normaliser")
+            pairs = parts[3].split(PipelineEncoder.PARAM_SEPARATOR)
+            for pair in pairs:
+                elements = pair.split(PipelineEncoder.TUPLE_SEPARATOR)
+                if len(elements) != 2:
+                    logging.debug("Normalise block: Not a valid pairing: ", pair)
+                self.normaliser.append({
+                    'scenario': elements[0],
+                    'value':    elements[1]
+                })
+        
+        # If normalising with a specific column, the next part is that column
+        if self.getFlag(LBOBlock.FLAGS['NORMALISE_TO_SPECIFIC_VALUE']):
+            nextIdx = 4 if self.type == LBOBlock.TYPE['SELECT'] else 3
+            if len(parts) <= nextIdx or len(parts[nextIdx].strip()) == 0:
+                raise PipelineError("Normalise block invalid: no column for normalise value")
+            self.normaliserValue = parts[nextIdx].strip()
+    
+    def apply(self, data_table, messages):
+        """ Apply this block to the given data table.
+        """
+        ignored_rows = []
+        no_normaliser_rows = []
+
+        groups = {}
+
+        for col in self.group:
+            if not col in data_table.scenarioColumns:
+                raise PipelineError("Invalid columns specified for block")
+        if self.type == LBOBlock.TYPE['SELECT']:
+            for n in self.normaliser:
+                if not n['scenario'] in data_table.scenarioColumns:
+                    raise PipelineError("Invalid columns specified for block")
+        if self.getFlag(LBOBlock.FLAGS['NORMALISE_TO_SPECIFIC_VALUE']):
+            if not self.normaliserValue in data_table.valueColumns:
+                raise PipelineError("Invalid columns specified for block")
+
+        # Group the rows up as needed
+        for row in data_table:
+            # Check if all the group columns are defined
+            skip = False
+            for key in self.group:
+                if key not in row.scenario:
+                    skip = True
+                    break
+            if skip:
+                ignored_rows.append(row)
+                continue
+            
+            # Hash the scenario and insert it into its group
+            sc_hash = scenario_hash(scenario=row.scenario, include=self.group)
+            if sc_hash not in groups:
+                groups[sc_hash] = []
+            groups[sc_hash].append(row)
+
+        # Get a set of normalisers
+        normalisers = {}
+        if self.type == LBOBlock.TYPE['SELECT']:
+            normalisers = self.processSelectNormaliser(groups)
+        elif self.type == LBOBlock.TYPE['BEST']:
+            normalisers = self.processBestNormaliser(groups)
+
+        # Perform the normalisation
+        new_rows = []
+        for (scenario, rows) in groups.iteritems():
+            if scenario not in normalisers:
+                no_normaliser_rows.extend(rows)
+                continue
+            for row in rows:
+                for key in row.values.keys():
+                    if self.getFlag(LBOBlock.FLAGS['NORMALISE_TO_SPECIFIC_VALUE']):
+                        normaliserValueKey = self.normaliserValue
+                    else:
+                        normaliserValueKey = key
+                    if normaliserValueKey in normalisers[scenario]:
+                        if self.getFlag(LBOBlock.FLAGS['INVERT_RESULT']):
+                            row.values[key] = normalisers[scenario][normaliserValueKey] / row.values[key]
+                        else:
+                            row.values[key] = row.values[key] / normalisers[scenario][normaliserValueKey]
+                    else:
+                        del row.values[key]
+                        
+            new_rows.extend(rows)
+        
+        # Wrap it all up
+        data_table.rows = new_rows
+
+        if len(ignored_rows) > 0:
+            logging.info("Normaliser block ignored %d rows because they were missing a scenario column from the selected grouping", len(ignored_rows))
+        if len(no_normaliser_rows) > 0:
+            logging.info("Normaliser block ignored %d rows because no normaliser existed for them", len(no_normaliser_rows))
+
+    def processSelectNormaliser(self, groups):
+        """ Normalises the rows to a specified normaliser. The normaliser is
+            specified by a column and value in the scenario of each row. Rows
+            in the table are first grouped by every column except the one chosen
+            for normalisation. Then in each group, a normaliser is found with
+            the normaliser column equal to the specified value. Each group is
+            then normalised to the chosen normaliser. Groups for which no
+            normaliser exists are thrown away.
+            
+            datatable: the DataTable to be normalised, passed by reference.
+            Keyword arguments:
+            * column -- the column from which the normaliser will be decided.
+            * value  -- the value which the specified column should be equal to
+                        in order to select that row as a normaliser.
+        """
+        
+        normalisers = {}
+
+        select_ignored_rows = []
+
+        for (scenario, rows) in groups.iteritems():
+            for (i, row) in enumerate(rows):
+                match = True
+                for selection in self.normaliser:
+                    if selection['scenario'] not in row.scenario:
+                        select_ignored_rows.append(row)
+                        del rows[i]
+                        match = False
+                        break
+                    elif row.scenario[selection['scenario']] != selection['value']:
+                        match = False
+                        break
+                if match:
+                    if scenario not in normalisers:
+                        normalisers[scenario] = copy.copy(row.values)
+                    else:
+                        raise PipelineAmbiguityException('More than one normaliser was found for the scenario %s. Both <pre>%s</pre> and <pre>%s</pre> were valid normalisers. Did you forget to set the right grouping for normalisation?' % (row.scenario, normalisers[scenario], row.values))
+        
+        if len(select_ignored_rows) > 0:
+            logging.info("Normaliser block ignored %d rows because they were missing a scenario column from the selected normaliser", len(select_ignored_rows))
+
+        return normalisers
+  
+    def processBestNormaliser(self, groups):
+        """ Normalises the rows to the best normaliser available. The rows in the
+            table are firstly grouped by comparing their scenarios only on the
+            specified columns. Then the best value in each group is found and
+            used to normalise the other rows in that group.
+            
+            datatable: the DataTable to be normalised, passed by reference.
+            Keyword arguments:
+            * group -- a list of scenario columns which should be used for
+                       grouping the rows before normalisation.
+        """
+
+        normalisers = {}
+
+        for (scenario, rows) in groups.iteritems():
+            normaliser = {}
+            for row in rows:
+                for (key, val) in row.values.items():
+                    if float(val) != 0 and float(val) < normaliser.get(key, float('inf')):
+                        normaliser[key] = val
+            normalisers[scenario] = normaliser
+
+        return normalisers
+
 
 class GraphBlock(Block):
     """ Generate graphs based on the data in the DataTable. """

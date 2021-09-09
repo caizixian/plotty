@@ -243,6 +243,37 @@
                 <button id="popup-format-delete-go" class="pipeline-button">Delete</button>
             </div>
         </div>
+        <div id="pipeline-lbo-template" class="pipeline lbo pipeline-block">
+            <div class="pipeline-content">
+                <span class="pipeline-header"><img src="static/muscle.png" style="width:16px;height:16px;"/> LBO</span>
+                <span class="pipeline-header-right"><input type="image" class="insert-button" src="static/brick_add.png"/><input type="image" class="remove-button" src="static/cross.png"/></span> <br/>
+                <label><input type="radio" name="lbo-type" class="radio-lbo-type" value="1" checked="checked"/> to specific scenario</label> <br />
+                <table class="pipeline-lbo-table">
+                    <tr>
+                        <td>
+                            <select class="select-lbo-column scenario-column scenario-column-values-select"><option></option></select>
+                        </td>
+                        <td>
+                            =
+                        </td>
+                        <td>
+                            <select class="select-lbo-value scenario-column-values"><option></option></select>
+                        </td>
+                        <td><input type="image" class="remove-row" disabled="disabled" src="static/delete.png"/></td>
+                        <td><input type="image" class="add-row" src="static/add.png"/></td>
+                    </tr>
+                </table>
+                <label><input type="radio" name="lbo-type" class="radio-lbo-type" value="2" /> to best value</label> <br />
+                <strong>Grouping</strong><br />
+                <select name="select-lbo-group" class="select-lbo-group" multiple="multiple"><option></option></select>
+                <strong>Settings</strong><br />
+                <label><input type="radio" name="lbo-value-type" value="0" class="radio-lbo-value-type" checked="checked" /> Normalise to corresponding normaliser value</label><br />
+                <label><input type="radio" name="lbo-value-type" value="1" class="radio-lbo-value-type" /> Normalise to specific value in normaliser</label> <br />
+                <select class="value-column select-lbo-normaliser-value"><option></option></select>
+                <label><input type="checkbox" class="lbo-invert" /> Invert normalised result (speedup).</label>
+            </div>
+            <div class="pipeline-footer"></div>
+        </div>
     </div>
     <div id="showLeftPanelButton"></div>
     <div id="pipeline">
@@ -321,6 +352,7 @@
                 <button class="pipeline-button" type="button" id="add-normalise">Normalise</button>
                 <button class="pipeline-button" type="button" id="add-graph">Graph</button>
                 <button class="pipeline-button" type="button" id="add-format">Format</button>
+                <button class="pipeline-button" type="button" id="add-lbo">LBO</button>
             </div>
         </div>
         <div id="pipeline-save" class="pipeline">

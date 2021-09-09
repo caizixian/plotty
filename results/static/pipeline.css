@@ -191,6 +191,11 @@ input:disabled {
     width: 32%;
     background-image: url('chart_line.png');
 }
+#add-lbo, #insert-format {
+    width: 32%;
+    background-image: url('muscle.png');
+    background-size: 16px 16px;
+}
 #pipeline-save-go {
     background-image: url('page_save.png');
 }
@@ -301,6 +306,9 @@ input:disabled {
 .graph {
     background: #fffab3;
 }
+.lbo {
+    background: #a7e2f5;
+}
 
 #output {
     position: absolute;
@@ -334,7 +342,7 @@ input:disabled {
 .text-valuefilter-upperbound {
     width: 60px;
 }
-#select-scenario-cols, #select-value-cols, .select-normalise-group {
+#select-scenario-cols, #select-value-cols, .select-normalise-group, .select-lbo-group {
     width: 100%;
     height: 100px;
 }
@@ -343,7 +351,7 @@ input:disabled {
     width: 100%;
 }
 
-.select-normalise-normaliser-value {
+.select-lbo-normaliser-value {
     display: none;
 }
 

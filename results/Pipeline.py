@@ -15,6 +15,7 @@ BLOCK_MAPPINGS = {
     '5': ValueFilterBlock,
     '6': CompositeScenarioBlock,
     '7': FormatBlock,
+    '8': LBOBlock
 }
 
 class Pipeline(object):
