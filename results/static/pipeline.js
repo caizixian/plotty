@@ -2380,37 +2380,8 @@ var Blocks = {
         ID: 8,
 
         /**
-         * The type of normalisation
-         */
-        TYPE: {
-            SELECT: 1,
-            BEST: 2
-        },
-
-        /**
-         * The available flags for this block
-         */
-        FLAGS: {
-            NORMALISE_TO_SPECIFIC_VALUE: 1 << 0,
-            INVERT_RESULT: 1 << 1
-        },
-
-        /**
          ** Object fields
          **/
-        
-        /**
-         * The type of normaliser. This should be a value from
-         * Pipeline.constants.normaliser
-         */
-        type: null,
-        
-        /**
-         * The scenario that selects the normaliser. This only exists if
-         * the type of normaliser is SELECT.
-         */
-        normaliser: null,
-        
         /**
          * The scenario columns used to group the rows before normalising.
          * Scenario columns can appear in either this or normaliser (if type
@@ -2418,11 +2389,8 @@ var Blocks = {
          */
         group: null,
 
-        /**
-         * The value column to use as normaliser if we're normalising to a
-         * specific column
-         */
-        normaliserValue: null,
+        column1: null,
+        column2: null,
         
         /**
          ** Object methods
@@ -2434,72 +2402,14 @@ var Blocks = {
         constructor: function(insertIndex) {
             this.base(insertIndex);
 
-            this.normaliser = [{scenario: -1, value: -1}];
             this.group = [];
-            this.normaliserValue = -1;
             
             // Create a closure to use as the callback for removing objects.
             // This way, the scope of this block is maintained.
             var thisBlock = this;
-            var removeClosure = function(row) {
-                thisBlock.removeNormaliser.call(thisBlock, row); 
-            };
-            var addClosure = function(row, i) {
-                thisBlock.normaliser.splice(i, 0, {scenario: -1, value: -1});
-                thisBlock.loadState();
-            };
-            
-            // Create the option table
-            this.optionsTable = new OptionsTable($('.pipeline-lbo-table', this.element), removeClosure, Pipeline.refresh, addClosure);
             
             // Hook the dropdowns
-            $(this.element).delegate('select, .select-lbo-group input, .lbo-invert', 'change', function() {
-                thisBlock.readState();
-                Pipeline.refresh();
-            });
-            
-            // We need to give the radio buttons a unique name to make sure
-            // they toggle correctly.
-            var allradios = $('input:radio', this.element);
-            var typeradios = allradios.filter('.radio-lbo-type');
-            var valueradios = allradios.filter('.radio-lbo-value-type');
-
-            var randomId = parseInt(Math.random() * 1E7);
-            allradios.each(function(i, elem) {
-                $(this).attr('name', $(this).attr('name') + randomId);
-            });
-
-            // By default we are selecting a specific normaliser and normalising
-            // to the corresponding normaliser
-            typeradios.first().attr('checked', true);
-            valueradios.first().attr('checked', true);
-            this.type = this.TYPE.SELECT;
-            
-            // Hook the radio buttons to show/hide the table
-            typeradios.change(function() {
-                if ( !this.checked ) {
-                    return;
-                }
-                if ( this.value == thisBlock.TYPE.SELECT ) {
-                    thisBlock.optionsTable.element.show();
-                }
-                else if ( this.value == thisBlock.TYPE.BEST ) {
-                    thisBlock.optionsTable.element.hide();
-                }
-                thisBlock.readState();
-                Pipeline.refresh()
-            });
-
-            valueradios.change(function() {
-                if ( !this.checked ) {
-                    return;
-                }
-                if ( this.value == thisBlock.FLAGS.NORMALISE_TO_SPECIFIC_VALUE ) {
-                    $('.select-lbo-normaliser-value', thisBlock.element).show();
-                }
-                else {
-                    $('.select-lbo-normaliser-value', thisBlock.element).hide();
-                }
+            $(this.element).delegate('select, .select-lbo-group input', 'change', function() {
                 thisBlock.readState();
                 Pipeline.refresh();
             });
@@ -2511,16 +2421,14 @@ var Blocks = {
          */
         decode: function(params) {
             var parts = params.split(Pipeline.encoder.GROUP_SEPARATOR);
-            // At least 3 parts - flagword, type, groups (possibly empty)
-            if ( parts.length < 3 ) {
-                console.debug("Normalise block invalid: incorrect number of parts");
+            if ( parts.length !== 3 ) {
+                console.debug("LBO block invalid: incorrect number of parts");
                 return
             }
 
-            this.flags = parseInt(parts[0]);
-            this.type = parts[1];
+            this.column1 = parts[0];
+            this.column2 = parts[1];
 
-            this.normaliser = [];
             this.group = [];
 
             // Part 3 is the groupings
@@ -2530,56 +2438,15 @@ var Blocks = {
                     this.group.push($.trim(groupings[i]));
                 }
             }
-
-            // If this is a select normaliser, part 4 is the pairs
-            if ( this.type == this.TYPE.SELECT ) {
-                if ( parts.length < 4 || $.trim(parts[3]).length == 0 ) {
-                    console.debug("Normalise block invalid: no pairings for select normaliser");
-                    return;
-                }
-                var pairs = parts[3].split(Pipeline.encoder.PARAM_SEPARATOR);
-                for ( var i = 0; i < pairs.length; i++ ) {
-                    var elements = pairs[i].split(Pipeline.encoder.TUPLE_SEPARATOR);
-                    if ( elements.length != 2 ) {
-                        console.debug("Normalise block: Not a valid pairing: ", pairs[i]);
-                        continue;
-                    }
-                    this.normaliser.push({scenario: elements[0], value: elements[1]});
-                }
-            }
-
-            // If we are normalising to a specific column, part 5 is that column
-            if ( this.getFlag(this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE) ) {
-                var nextIdx = (this.type == this.TYPE.SELECT ? 4 : 3);
-                if ( parts.length <= nextIdx ) {
-                    console.debug("Normalise block invalid: no column for normalise value");
-                    return;
-                }
-                this.normaliserValue = $.trim(parts[nextIdx]);
-            }
         },
         
         /**
          * Encode this block into a parameter string based on its configuration.
          */
         encode: function() {
-            var strs = [this.flags, this.type];
+            var strs = [this.column1, this.column2];
 
             strs.push(this.group.join(Pipeline.encoder.PARAM_SEPARATOR));
-
-            if ( this.type == this.TYPE.SELECT ) {
-                var pairs = [];
-                jQuery.each(this.normaliser, function(i, norm) {
-                    if ( norm.scenario != -1 && norm.value != -1 ) {
-                        pairs.push(norm.scenario + Pipeline.encoder.TUPLE_SEPARATOR + norm.value);
-                    }
-                });
-                strs.push(pairs.join(Pipeline.encoder.PARAM_SEPARATOR));
-            }
-
-            if ( this.getFlag(this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE) ) {
-                strs.push(this.normaliserValue);
-            }
             
             return strs.join(Pipeline.encoder.GROUP_SEPARATOR);
         },
@@ -2591,37 +2458,13 @@ var Blocks = {
         readState: function() {
             this.group = [];
             this.normaliser = [];
-        
-            // Read the type
-            this.type = $('input:radio:checked', this.element).val();
-        
-            // If needed, read the normaliser
-            if ( this.type == this.TYPE.SELECT ) {
-                var thisBlock = this;
-                $('tr', this.element).each(function() {
-                    var scenarioSelect = $('.select-lbo-column', this);
-                    var valueSelect = $('.select-lbo-value', this);
-                    
-                    thisBlock.normaliser.push({
-                        scenario: scenarioSelect.val(),
-                        value: valueSelect.val()
-                    });
-                });
-            }
-        
+            var column1Select = $('.select-lbo-value-1', this.element);
+            var column2Select = $('.select-lbo-value-2', this.element);
+
+            this.column1 = column1Select.val();
+            this.column2 = column2Select.val();
             // Read the grouping
             this.group = Utilities.multiSelectValue($('.select-lbo-group', this.element));
-
-            // Read the normaliser column setting
-            var n = $('input.radio-lbo-value-type:checked', this.element).val();
-            this.setFlag(this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE, n == this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE);
-
-            // Read the value column is needed
-            if ( n == this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE ) {
-                this.normaliserValue = $('.select-lbo-normaliser-value', this.element).val();
-            }
-            var invResCheck = $('input.lbo-invert', this.element);
-            this.setFlag(this.FLAGS.INVERT_RESULT, invResCheck.is(':checked'));
         },
     
         /**
@@ -2629,49 +2472,19 @@ var Blocks = {
          * HTML.
          */
         loadState: function() {
-            var typeradios = $('.radio-lbo-type', this.element);
-            var valueradios = $('.radio-lbo-value-type', this.element);
-
-            typeradios.removeAttr('checked');
-            typeradios.filter('[value=' + this.type + ']').attr('checked', true);
-
-            valueradios.removeAttr('checked');
-            valueradios.filter('[value=' + (this.getFlag(this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE) & 1) + ']').attr('checked', true);
-
             // Update all the scenario columns
             var thisBlock = this;
-            $('.select-lbo-column', this.optionsTable.element).each(function() {
-                Utilities.updateSelect(this, thisBlock.scenarioColumnsCache, thisBlock.scenarioColumnsCache, true);
-            });
+            var column1Select = $('.select-lbo-value-1', this.element);
+            var column2Select = $('.select-lbo-value-2', this.element);
+
+            Utilities.updateSelect(column1Select, this.valueColumnsCache, this.valueColumnsCache);
+            Utilities.updateSelect(column2Select, this.valueColumnsCache, this.valueColumnsCache);
+
+            column1Select.val(this.column1);
+            column2Select.val(this.column2);
+
             // Update the groups
             Utilities.updateMultiSelect($('.select-lbo-group', this.element), thisBlock.scenarioColumnsCache, thisBlock.scenarioColumnsCache, true);
-
-            if ( this.type == this.TYPE.SELECT ) {
-                // Show and reset the table
-                this.optionsTable.element.show();
-                this.optionsTable.reset();
-                
-                var thisBlock = this;
-                jQuery.each(this.normaliser, function(i, norm) {
-                    var row = thisBlock.optionsTable.addRow();
-                    var scenarioSelect = $('.select-lbo-column', row);
-                    var valueSelect = $('.select-lbo-value', row);
-                    
-                    // Note here we assume the scenario dropdown has already been updated
-                    scenarioSelect.val(norm.scenario);
-                    if ( norm.scenario == -1 ) {
-                        Utilities.updateSelect(valueSelect, [], []);
-                    }
-                    else {
-                        Utilities.updateSelect(valueSelect, thisBlock.scenarioDisplayCache[norm.scenario], thisBlock.scenarioValuesCache[norm.scenario]);
-                    }
-                    valueSelect.val(norm.value);
-                });
-            }
-            else {
-                // Hide the table, and reset it anyway
-                this.optionsTable.element.hide();
-            }
 
             // Update the grouping
             $('.select-lbo-group input:checkbox', this.element).each(function() {
@@ -2681,107 +2494,25 @@ var Blocks = {
                 else {
                     $(this).removeAttr('checked');
                 }
-            });
-
-            Utilities.updateSelect($('.select-lbo-normaliser-value', this.element), this.valueDisplayCache, this.valueColumnsCache);
-            if ( this.getFlag(this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE) ) {
-                $('.select-lbo-normaliser-value', this.element).val(this.normaliserValue).show();
-            }
-            else {
-                $('.select-lbo-normaliser-value', this.element).hide();
-            }
-
-            if ( this.getFlag(this.FLAGS.INVERT_RESULT) ) {
-                $('input.normalise-invert', this.element).attr('checked', 'checked');
-            } else {
-                $('input.normalise-invert', this.element).removeAttr('checked');
-            }
-            
+            });           
         },
         
         refreshColumns: function() {
             var thisBlock = this;
             var changed = false;
 
-            // If we are selecting a normaliser, we need to update the 
-            // options table.
-            if ( this.type == this.TYPE.SELECT ) {                
-                jQuery.each(this.normaliser, function(i, norm) {
-                    // If the selected scenario isn't in the new available ones,
-                    // reset this row
-                    if ( norm.scenario != -1 && jQuery.inArray(norm.scenario, thisBlock.scenarioColumnsCache) == -1 ) {
-                        norm.scenario = -1;
-                        norm.value = -1;
-                        changed = true;
-                        return;
-                    }
-                    
-                    // Check that the value is still in the value cache
-                    if ( norm.value != -1 && jQuery.inArray(norm.value, thisBlock.scenarioValuesCache[norm.scenario]) == -1 ) {
-                        norm.value = -1;
-                        changed = true;
-                        return;
-                    }
-                });
-            }
-            
-            // Check that all the groups are in the new scenario cols
-            jQuery.each(this.group, function(i, grp) {
-                if ( jQuery.inArray(grp, thisBlock.scenarioColumnsCache) == -1 ) {
-                    // This is safe due to the way jQuery.each iterates.
-                    thisBlock.group.splice(i, 1);
-                    changed = true;
-                }
-            });
-
-            if ( this.getFlag(this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE) ) {
-                if ( this.normaliserValue != -1 && jQuery.inArray(this.normaliserValue, this.valueColumnsCache) == -1 ) {
-                    this.normaliserValue = -1;
-                    changed = true;
-                }
-            }
-
             return changed;
         },
 
         complete: function() {
             var valid = true;
-            if ( this.type == this.TYPE.SELECT ) {
-                jQuery.each(this.normaliser, function(i, norm) {
-                    // If the selected scenario isn't in the new available ones,
-                    // reset this row
-                    if ( norm.scenario == -1 || norm.value == -1) {
-                        valid = false;
-                    }
-                });
-            }
-
-            if ( this.getFlag(this.FLAGS.NORMALISE_TO_SPECIFIC_VALUE) ) {
-                if ( this.normaliserValue == -1 ) {
-                    valid = false;
-                }
+            if ( this.column1 === null || this.column2 === null ) {
+                valid = false;
             }
 
             return valid;
         },
-        
-        /**
-         * A row is about to be removed from the OptionsTable. We need to
-         * clean it up here.
-         *
-         * @param row Element The table row to be removed
-         */
-        removeNormaliser: function(row) {
-            var scenario  = $('.select-lbo-column', row).val();
-            var value     = $('.select-lbo-value', row).val();
 
-            for ( var i = 0; i < this.normaliser.length; i++ ) {
-                if ( this.normaliser[i].scenario == scenario && this.normaliser[i].value == value ) {
-                    this.normaliser.splice(i, 1);
-                    break;
-                }
-            }
-        }
     }),
 };
 
