@@ -896,6 +896,15 @@ var Blocks = {
                 $(this).attr('name', $(this).attr('name') + randomId);
             });
 
+            // We need to give the select groups a unique name to make sure
+            // the toCheckList plugin work properly
+            var allselects = $('select', this.element);
+
+            var randomId = parseInt(Math.random() * 1E7);
+            allselects.each(function(i, elem) {
+                $(this).attr('id', $(this).attr('name') + randomId);
+            });
+
             // By default we are selecting a specific normaliser and normalising
             // to the corresponding normaliser
             typeradios.first().attr('checked', true);
@@ -2412,6 +2421,15 @@ var Blocks = {
             $(this.element).delegate('select, .select-lbo-group input', 'change', function() {
                 thisBlock.readState();
                 Pipeline.refresh();
+            });
+
+            // We need to give the select groups a unique name to make sure
+            // the toCheckList plugin work properly
+            var allselects = $('select', this.element);
+
+            var randomId = parseInt(Math.random() * 1E7);
+            allselects.each(function(i, elem) {
+                $(this).attr('id', $(this).attr('name') + randomId);
             });
         },
 
