@@ -2963,6 +2963,23 @@ var Pipeline = {
             return false;
         });
 
+        $("#select-value-cols-all").click(function() {
+            if ( $('#select-value-cols input:checkbox').length == 0 ) return false;
+            $('#select-value-cols input:checkbox').attr('checked', true);
+            $('#select-value-cols li').addClass('checked');
+            Pipeline.selectedValueColumns = Utilities.multiSelectValue($("#select-value-cols"));
+            Pipeline.refresh();
+            return false;
+        });
+        $('#select-value-cols-none').click(function() {
+            if ( $('#select-value-cols input:checkbox').length == 0 ) return false;
+            $('#select-value-cols input:checkbox').removeAttr('checked');
+            $('#select-value-cols li').removeClass('checked');
+            Pipeline.selectedValueColumns = [];
+            Pipeline.refresh();
+            return false;
+        });
+
         // Hook the checkboxes in the scenario and value column selects
         $("#pipeline-scenario-cols").delegate("#select-scenario-cols input", 'change', function() {
             Pipeline.selectedScenarioColumns = Utilities.multiSelectValue($("#select-scenario-cols"));
