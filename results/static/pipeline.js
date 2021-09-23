@@ -3009,7 +3009,10 @@ var Pipeline = {
         });
         $(window).resize(function() {
             $(".graph-table").each(function(i, g) {
-                $(g).data('reformat')(g);
+                var reformat_func = $(g).data('reformat');
+                if (reformat_func) {
+                    reformat_func(g);
+                }
             });
         });
 
