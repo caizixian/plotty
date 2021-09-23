@@ -4,7 +4,7 @@ def scenario_hash(scenario, exclude=None, include=None):
     """ Hashes a scenario dictionary by either including or excluding values
         based on the specified lists.
     """
-    from plotty.results.DataTypes import ScenarioValue
+    from results.DataTypes import ScenarioValue
     hashstr = ""
     i = 0
     for key in sorted(scenario):
@@ -22,7 +22,7 @@ def scenario_hash(scenario, exclude=None, include=None):
     return hashstr
 
 def present_scenario(val):
-    from plotty.results.DataTypes import ScenarioValue
+    from results.DataTypes import ScenarioValue
     if isinstance(val, ScenarioValue):
         if val.value != val.display:
             return '<span title="' + val.value + '">' + val.display + '</span>'
@@ -31,7 +31,7 @@ def present_scenario(val):
     return str(val)
 
 def present_scenario_csv(val):
-    from plotty.results.DataTypes import ScenarioValue
+    from results.DataTypes import ScenarioValue
     if isinstance(val, ScenarioValue):
         return val.display
     return str(val)
@@ -40,7 +40,7 @@ def present_value(val):
     """ Turns a value into a state where it can be presented as HTML, including
         its confidence interval and sparkline if appropriate.
     """
-    from plotty.results.DataTypes import DataAggregate  # Avoid a circular import issue in DataTypes
+    from results.DataTypes import DataAggregate  # Avoid a circular import issue in DataTypes
     if isinstance(val, DataAggregate):
         output = "%.3f" % val.value()
         ciDown, ciUp = val.ciPercent()
@@ -58,7 +58,7 @@ def present_value_csv(key, val, values_with_ci):
         including its confidence interval if the column it appears in has
         confidence intervals somewhere in it.
     """
-    from plotty.results.DataTypes import DataAggregate  # Avoid a circular import issue in DataTypes
+    from results.DataTypes import DataAggregate  # Avoid a circular import issue in DataTypes
     if key in values_with_ci:
         ciDown, ciUp = val.ci()
         if math.isnan(ciDown):
@@ -70,7 +70,7 @@ def present_value_csv(key, val, values_with_ci):
 
 def present_value_csv_graph(val, useCI):
     """ Prints a value for CSV """
-    from plotty.results.DataTypes import DataAggregate
+    from results.DataTypes import DataAggregate
     if useCI:
         if isinstance(val, DataAggregate):
             ciDown, ciUp = val.ci()

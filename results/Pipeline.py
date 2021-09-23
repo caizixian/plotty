@@ -1,10 +1,10 @@
-import plotty.results.PipelineEncoder
+import results.PipelineEncoder
 from django.core.cache import cache
 from django.db.models import Max
-from plotty.results.DataTypes import DataTable, DataRow, DataAggregate, Messages
-from plotty.results.Blocks import *
-from plotty.results.Exceptions import *
-import plotty.results.PipelineEncoder as PipelineEncoder
+from results.DataTypes import DataTable, DataRow, DataAggregate, Messages
+from results.Blocks import *
+from results.Exceptions import *
+import results.PipelineEncoder as PipelineEncoder
 import sys, traceback, logging, copy, os, time
 
 BLOCK_MAPPINGS = {

@@ -5,7 +5,6 @@ import sys, os
 os.umask(0)
 
 DEBUG = not False
-TEMPLATE_DEBUG = DEBUG
 
 # Two-tailed confidence level (i.e. this value will be halved for calls to
 # the inverse t function)
@@ -14,10 +13,10 @@ if 'PLOTTY_ROOT' in os.environ:
     ROOT_DIR = os.environ['PLOTTY_ROOT']
     IS_SQUIRREL = True
 else:
-    ROOT_DIR = os.path.dirname(__file__)
+    ROOT_DIR = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
     IS_SQUIRREL = False
 
-APP_ROOT = os.path.dirname(__file__)
+APP_ROOT = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 
 BM_LOG_DIR = os.path.join(ROOT_DIR, 'log')
 
@@ -145,13 +144,6 @@ ADMIN_MEDIA_PREFIX = '/media/'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'o!%73-#^d%#11_gl=$1u7#d=w_@=3rce*l1g-sw4n&695b+h#8'
 
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
-
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -164,15 +156,25 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'plotty.urls'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    ROOT_DIR + '/results/templates'
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+            'debug': DEBUG,
+        },
+    },
+]
 
 INSTALLED_APPS = (
-#    'django.contrib.auth',
+    'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
 #    'django.contrib.sites',
@@ -180,5 +182,5 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable the admin:
 #    'django.contrib.admin',
     'debug_toolbar',
-    'plotty.results',
+    'results',
 )

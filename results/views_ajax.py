@@ -3,10 +3,10 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db import transaction
-from plotty.results.DataTypes import *
-from plotty.results.Blocks import *
-from plotty.results.models import *
-from plotty.results.Pipeline import *
+from results.DataTypes import *
+from results.Blocks import *
+from results.models import *
+from results.Pipeline import *
 from plotty import settings, install_defaults
 import json, csv, logging, os, shutil, math, random
 from datetime import datetime

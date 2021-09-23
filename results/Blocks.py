@@ -6,11 +6,11 @@ which it describes.
 
 import math, copy, os, time
 import subprocess
-from plotty.results.DataTypes import DataRow, DataAggregate, ScenarioValue
-from plotty.results.Utilities import present_scenario, present_scenario_csv, present_value, present_value_csv_graph, scenario_hash
-from plotty.results.Exceptions import PipelineAmbiguityException, PipelineError, PipelineBlockException
-import plotty.results.PipelineEncoder as PipelineEncoder
-from plotty.results.models import *
+from results.DataTypes import DataRow, DataAggregate, ScenarioValue
+from results.Utilities import present_scenario, present_scenario_csv, present_value, present_value_csv_graph, scenario_hash
+from results.Exceptions import PipelineAmbiguityException, PipelineError, PipelineBlockException
+import results.PipelineEncoder as PipelineEncoder
+from results.models import *
 from plotty import settings
 import logging
 import re

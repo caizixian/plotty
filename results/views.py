@@ -1,14 +1,14 @@
 # Create your views here.
 
 import os, datetime, math, logging, shutil
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.template import RequestContext
-from plotty.results.DataTypes import *
-from plotty.results.Blocks import *
-from plotty.results.models import SavedPipeline, ShortURL
-from plotty.results.Pipeline import *
-import plotty.results.PipelineEncoder
+from results.DataTypes import *
+from results.Blocks import *
+from results.models import SavedPipeline, ShortURL
+from results.Pipeline import *
+import results.PipelineEncoder
 from plotty import settings
 
 class LoggingStream(object):
@@ -67,11 +67,11 @@ def pipeline(request):
     logs = [f for f in os.listdir(settings.BM_LOG_DIR) if is_log_dir(f) or is_csv_file(f)]
     logs.sort(key=str.lower)
     pipelines = SavedPipeline.objects.all().order_by('name')
-    return render_to_response('pipeline.html', {
+    return render(request, 'pipeline.html', {
         'logs': logs,
         'pipelines': pipelines,
         'debug': settings.DEBUG
-    }, context_instance=RequestContext(request))
+    })
 
 def shorturl(request, url):
     try:

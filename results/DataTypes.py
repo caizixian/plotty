@@ -1,9 +1,9 @@
 from django.core.cache import cache
 import logging, sys, csv, os, math, re, string, subprocess, time, stat
 from plotty import settings
-from plotty.results.Utilities import present_value, present_value_csv, scenario_hash, length_cmp, t_quantile
-from plotty.results.Exceptions import LogTabulateStarted, PipelineError
-from plotty.results.CSVParser import parse_csv
+from results.Utilities import present_value, present_value_csv, scenario_hash, length_cmp, t_quantile
+from results.Exceptions import LogTabulateStarted, PipelineError
+from results.CSVParser import parse_csv
 import tempfile
 import StringIO, urllib
 
@@ -217,10 +217,10 @@ class DataTable:
             else:
                 # call the parser directly
                 if settings.USE_NEW_LOGPARSER:
-                    from plotty.results.LogParser import tabulate_log_folder
+                    from results.LogParser import tabulate_log_folder
                     tabulate_log_folder(log_path, csv_file)
                 else:
-                    from plotty.results.Tabulate import extract_csv
+                    from results.Tabulate import extract_csv
                     extract_csv(log_path, csv_file)
         else:
             logging.debug("Valid CSV already exists for " + log_path + ", skipping retabulation.")
