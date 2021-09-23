@@ -10,7 +10,7 @@ and try pip again.
 
 Install prerequisites:
     Django:
-        $ sudo pip install django==1.2.3
+        $ pip install -r requirements.txt
     Gnuplot:
         Use a package manager (brew on OS X, apt-get on Ubuntu):
             $ brew install gnuplot
@@ -35,8 +35,8 @@ Set up the plotty directory:
     $ mkdir log
 
 Initialise the database:
-    $ python manage.py syncdb
-    $ python install_defaults.py
+    $ python manage.py migrate
+    $ python plotty/install_defaults.py
 
 Get some logs to test with:
     $ cp ~/data.csv log/

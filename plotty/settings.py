@@ -6,6 +6,8 @@ os.umask(0)
 
 DEBUG = not False
 
+ALLOWED_HOSTS = ["squirrel.anu.edu.au"]
+
 # Two-tailed confidence level (i.e. this value will be halved for calls to
 # the inverse t function)
 CONFIDENCE_LEVEL = 0.95
