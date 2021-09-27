@@ -23,6 +23,7 @@ re_passed = re.compile("PASSED in (\d+) msec")
 re_warmup = re.compile("completed warmup \d* *in (\d+) msec")
 re_finished = re.compile("Finished in (\S+) secs")
 re_998 = re.compile("_997_|_998_")
+re_latency = re.compile("tail latency: 50% (\d+) usec, 90% (\d+) usec, 99% (\d+) usec, 99.9% (\d+) usec, 99.99% (\d+) usec, max (\d+) usec")
 
 # parser states
 class states(object):
@@ -130,6 +131,19 @@ def parse_csv(logpath, filename):
                     if m and not re_998.search(l):
                         msec = float(m.group(1)) * 1000.0
                         value.append(("bmtime", str(msec)))
+                        continue
+                    m = re_latency.search(l)
+                    if m:
+                        latencies = dict(
+                            p50=m.group(1),
+                            p90=m.group(2),
+                            p99=m.group(3),
+                            p999=m.group(4),
+                            p9999=m.group(5),
+                            pmax=m.group(6)
+                        )
+                        for tup in latencies.items():
+                            value.append(tup)
                         continue
 
                     # Now check for errors
