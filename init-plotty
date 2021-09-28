@@ -13,7 +13,7 @@ fi
 PROJECT_NAME=$1
 LOG_DIR=$2
 DIR=`dirname $0`
-BRANCH="master"
+BRANCH="lbo"
 
 USER=""
 if [  -z "$3" ]; then
@@ -68,12 +68,12 @@ if [[ $? -ne 0 ]]; then
 fi
 
 echo "---> Moving instance files to correct locations"
-cp $PLOTTY_ROOT/app/plotty/server.wsgi $PLOTTY_ROOT/app/server.wsgi
+#cp $PLOTTY_ROOT/app/plotty/server.wsgi $PLOTTY_ROOT/app/server.wsgi
 #cp $PLOTTY_ROOT/app/plotty/database.sqlite3.default $PLOTTY_ROOT/cache/database.sqlite3
 
 echo "---> Setting up new database"
-(cd $PLOTTY_ROOT/app/plotty; PLOTTY_ROOT="$PLOTTY_ROOT" python manage.py syncdb) > /dev/null
-(cd $PLOTTY_ROOT/app/plotty; PLOTTY_ROOT="$PLOTTY_ROOT" python install_defaults.py) > /dev/null
+(cd $PLOTTY_ROOT/app/plotty; PLOTTY_ROOT="$PLOTTY_ROOT" python manage.py migrate) > /dev/null
+(cd $PLOTTY_ROOT/app/plotty; PLOTTY_ROOT="$PLOTTY_ROOT" python plotty/reinstall_defaults.py) > /dev/null
 
 echo "---> Fixing permissions for apache"
 chmod -R a+r $PLOTTY_ROOT
