@@ -1,6 +1,8 @@
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(__file__, os.pardir, os.pardir)))
 import django
-os.environ["DJANGO_SETTINGS_MODULE"] = "settings"
+os.environ["DJANGO_SETTINGS_MODULE"] = "plotty.settings"
 from django.conf import settings
 from django.db import transaction
 django.setup()

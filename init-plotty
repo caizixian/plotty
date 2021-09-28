@@ -42,6 +42,12 @@ if [[ !( -d $USER_HOME/plotty ) ]]; then
     mkdir $USER_HOME/plotty
 fi
 
+if [[ !( -d $USER_HOME/plotty/env ) ]]; then
+    (cd $USER_HOME/plotty; virtualenv -p python env; source env/bin/activate; pip install -r requirements.txt)
+fi
+
+source $USER_HOME/plotty/env/bin/activate
+
 PLOTTY_ROOT=$USER_HOME/plotty/$PROJECT_NAME
 
 if [[ -d $PLOTTY_ROOT ]]; then
@@ -73,7 +79,7 @@ echo "---> Moving instance files to correct locations"
 
 echo "---> Setting up new database"
 (cd $PLOTTY_ROOT/app/plotty; PLOTTY_ROOT="$PLOTTY_ROOT" python manage.py migrate) > /dev/null
-(cd $PLOTTY_ROOT/app/plotty; PLOTTY_ROOT="$PLOTTY_ROOT" python plotty/reinstall_defaults.py) > /dev/null
+(cd $PLOTTY_ROOT/app/plotty; PLOTTY_ROOT="$PLOTTY_ROOT" python plotty/install_defaults.py) > /dev/null
 
 echo "---> Fixing permissions for apache"
 chmod -R a+r $PLOTTY_ROOT
