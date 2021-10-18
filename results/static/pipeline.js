@@ -3263,6 +3263,10 @@ var Pipeline = {
             $(this).parents("#pipeline-insert").remove();
             Pipeline.createBlock(Blocks.FormatBlock, block);
         });
+        $('#insert-lbo', addBlock).click(function() {
+            $(this).parents("#pipeline-insert").remove();
+            Pipeline.createBlock(Blocks.LBOBlock, block);
+        });
         addBlock.append('<div class="pipeline-footer"></div>');
         $('.pipeline-header', addBlock).html("<img src='static/brick_add.png'/> Insert Block");
         $('.pipeline-header-right', addBlock).html('<input type="image" class="remove-button" src="static/cross.png"/>');
