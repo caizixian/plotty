@@ -229,7 +229,7 @@ def parse_csv(logpath, filename):
                 for k, v in zip(tabulate_stats_headers, vals):
                     if k == '':
                         continue
-                    if k == 'time.mu' or k == 'time.gc':
+                    if k == 'time.mu' or k == 'time.gc' or k == 'time.other' or k == 'time.stw':
                         totaltime += float(v)
                     value.append((k,v))
                 value.append(("time", str(totaltime)))
