@@ -23,7 +23,7 @@ re_passed = re.compile("PASSED in (\d+) msec")
 re_warmup = re.compile("completed warmup \d* *in (\d+) msec")
 re_finished = re.compile("Finished in (\S+) secs")
 re_998 = re.compile("_997_|_998_")
-re_latency = re.compile("tail latency: 50% (\d+) usec, 90% (\d+) usec, 99% (\d+) usec, 99.9% (\d+) usec, 99.99% (\d+) usec, max (\d+) usec")
+re_latency = re.compile("DaCapo (\w*) *tail latency: 50% (\d+) usec, 90% (\d+) usec, 99% (\d+) usec, 99.9% (\d+) usec, 99.99% (\d+) usec, max (\d+) usec")
 
 # parser states
 class states(object):
@@ -135,16 +135,19 @@ def parse_csv(logpath, filename):
                         continue
                     m = re_latency.search(l)
                     if m:
+                        latency_suffix = m.group(1)
                         latencies = dict(
-                            p50=m.group(1),
-                            p90=m.group(2),
-                            p99=m.group(3),
-                            p999=m.group(4),
-                            p9999=m.group(5),
-                            pmax=m.group(6)
+                            p50=m.group(2),
+                            p90=m.group(3),
+                            p99=m.group(4),
+                            p999=m.group(5),
+                            p9999=m.group(6),
+                            pmax=m.group(7)
                         )
-                        for tup in latencies.items():
-                            value.append(tup)
+                        for latency_name, latency_value in latencies.items():
+                            if latency_suffix:
+                                latency_name += ".{}".format(latency_suffix)
+                            value.append((latency_name, latency_value))
                         continue
 
                     # Now check for errors
