@@ -91,7 +91,8 @@ def parse_csv(logpath, filename):
 
         if state == states.IN_INVOCATION:
             # Is this line some sort of data output?
-            if l[0] == '=':
+            # XXX DaCapo Chopin jython prints bells 
+            if l.startswith("=") or l.startswith("\a="):
                 m = re_scenario.match(l)
                 if m:
                     legacy_mode = False
