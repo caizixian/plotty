@@ -1065,8 +1065,12 @@ class GraphBlock(Block):
                     csv_file = open(graph_path + '.csv', "w")
                     csv_file.write(csv)
                     csv_file.close()
-   
-                    title = data_table.valueColumnsDisplay[value_key]
+
+                    vcd = data_table.valueColumnsDisplay[value_key]
+                    if isinstance(vcd, ScenarioValue):
+                        title = vcd.display
+                    else:
+                        title = vcd
 
                     (plot_output, suffixes) = self.produceGraph(graph_hash, graph_path, code, column_keys, ylabel=title)
                     
