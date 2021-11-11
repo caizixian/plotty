@@ -561,3 +561,8 @@ th.headerSortDown {
     max-width: 330px;
     text-overflow: ellipsis;
 }
+
+.select-graph-value {
+    max-width: 250px;
+    text-overflow: ellipsis;
+}
