@@ -2524,7 +2524,7 @@ var Blocks = {
 
         complete: function() {
             var valid = true;
-            if ( this.column1 === null || this.column2 === null ) {
+            if ( this.column1 === "-1" || this.column1 === null || this.column2 === "-1" || this.column2 === null) {
                 valid = false;
             }
 
