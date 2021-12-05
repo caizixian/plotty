@@ -97,6 +97,7 @@ def pipeline(request, pipeline):
                                     'error_html': error_output,
                                     'warn_html': msg_output,
                                     'table_html': table_output,
+                                    'table_csv': dt.renderToCSV(),
                                     'rows': len(dt.rows),
                                     'graphs': graph_outputs}))
 

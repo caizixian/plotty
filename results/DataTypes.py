@@ -443,7 +443,7 @@ class DataTable:
                     output += present_value_csv(key, row.values[key], values_with_ci) + ','
                 else:
                     if key in values_with_ci:
-                        output += '"","",""'
+                        output += '"","","",'
                     else:
                         output += '"",'
             if output[-1] == ',':

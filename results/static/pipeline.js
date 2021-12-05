@@ -3462,6 +3462,15 @@ var Pipeline = {
                     showTable = graphCount == 0; 
                 }
                 output.append(Utilities.makeFoldable('Table', data.table_html, showTable, false));
+                var table_results = $('table.results');
+                $("<button type=\"button\" id=\"table_download\">Download CSV</button>").insertBefore(table_results);
+                $("button#table_download").click(function () {
+                    var hiddenElement = document.createElement('a');  
+                    hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(data.table_csv);  
+                    hiddenElement.target = '_blank';  
+                    hiddenElement.download = 'plotty.csv';  
+                    hiddenElement.click();  
+                });
                 output.append(data.warn_html);
                 if ( data.rows > Pipeline.constants.MAX_TABLE_ROWS_AUTO_RENDER) {
                     $('#output table, #output .foldable.table').hide();
