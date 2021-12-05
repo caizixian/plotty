@@ -723,7 +723,7 @@ class LBOBlock(Block):
         for (scenario, rows) in groups.iteritems():
             best = min([self.get_value(x.values[self.column1]) for x in rows])
             for row in rows:
-                row.values["{}.total".format(self.prefix)] = self.get_value(row.values[self.column1]) + self.get_value(row.values[self.column2])
+                row.values["{}.total".format(self.prefix)] = row.values[self.column1] + row.values[self.column2]
                 row.values["{}.lbo".format(self.prefix)] = row.values["{}.total".format(self.prefix)] / best
             new_rows.extend(rows)
 
