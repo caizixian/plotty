@@ -1,5 +1,5 @@
 from django.core.cache import cache
-import logging, sys, csv, os, math, re, string, subprocess, time, stat
+import logging, sys, csv, os, math, re, string, subprocess, time, stat, copy
 from plotty import settings
 from results.Utilities import present_value, present_value_csv, scenario_hash, length_cmp, t_quantile
 from results.Exceptions import LogTabulateStarted, PipelineError
@@ -742,6 +742,13 @@ class DataAggregate:
             res.manual(value=val, ciUp=ciUp, ciDown=ciDown, newMin=valMin, newMax=valMax)
             return res
         else:
-            res = copy.copy(self)
+            res = copy.deepcopy(self)
             res.map(lambda d: d / float(other))
             return res
+
+    def __add__(self, other):
+        assert len(self._values) == len(other._values)
+        res = copy.deepcopy(self)
+        res._isValid = False
+        res._values = [x + y for x, y in zip(res._values, other._values)]
+        return res
