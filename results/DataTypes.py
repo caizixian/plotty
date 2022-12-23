@@ -271,7 +271,7 @@ class DataTable:
         
         derived_vals = []
         subst_variable = lambda i: "s%02i" % i
-        value_columns_lower = dict([(str.lower(s), s) for s in self.valueColumns])
+        value_columns_lower = dict([(s.lower(), s) for s in self.valueColumns])
         # Super hack: this avoids e.g. 'time.gc' being interpreted as referring
         # to the 'time' column, thereby creating an invalid expression. So, we
         # sort the possible keys by length, so 'time.gc' is always tested before
@@ -280,7 +280,7 @@ class DataTable:
         value_columns_keys.sort(length_cmp)
         for expr in derivedVals:
             # Try to compile the derived columns
-            val = str.lower(str(expr))
+            val = str(expr).lower()
                 
             # Replace the value column tokens in the expression with a simple
             # substitution key. We'll also prepare a simple exemplar row to make
@@ -418,8 +418,8 @@ class DataTable:
     
     def renderToCSV(self):
         scenarios, values, values_with_ci = self.headers()
-        scenarios.sort(key=str.lower)
-        values.sort(key=str.lower)
+        scenarios.sort(key=lambda s: s.lower())
+        values.sort(key=lambda s: s.lower())
         output = ''
         for name in scenarios:
             output += '"' + name + '",'
